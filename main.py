@@ -3,15 +3,19 @@ import openai
 from pydantic import BaseModel
 import os
 
+# Create FastAPI app
 app = FastAPI()
 
+# Get your OpenAI API key from environment variable
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
+# Define the expected input structure
 class Question(BaseModel):
     question: str
 
 @app.post("/ask")
 def ask_question(q: Question):
+    # System prompt describing your assistant's role
     system_prompt = (
         "You are a highly knowledgeable, evidence-based literacy coach, specialising in the Science of Learning and explicitly teaching reading and writing. "
         "You are helping NSW Department of Education teachers improve their practice. "
@@ -32,14 +36,22 @@ def ask_question(q: Question):
         "Keep responses under 250 words unless the teacher explicitly asks for more detail."
     )
 
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": q.question}
-        ],
-        max_tokens=500,
-        temperature=0.2
-    )
+    try:
+        # Make the OpenAI API call
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",  # or change to "gpt-4" if needed
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": q.question}
+            ],
+            max_tokens=500,
+            temperature=0.2
+        )
 
-    return {"answer": response.choices[0].message.content.strip()}
+        # Extract and return the response
+        answer = response.choices[0].message.content.strip()
+        return {"answer": answer}
+
+    except Exception as e:
+        # Catch and return any errors
+        return {"error": str(e)}
