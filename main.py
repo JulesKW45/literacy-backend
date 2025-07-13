@@ -1,10 +1,20 @@
 from fastapi import FastAPI
-import openai
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import openai
 import os
 
 # Create FastAPI app
 app = FastAPI()
+
+# Add CORS middleware AFTER creating app
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Or better: ["https://your-frontend.vercel.app"]
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Configure OpenAI client
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
