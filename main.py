@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 load_dotenv()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -7,13 +8,13 @@ import openai
 import os
 import json
 
-# Create FastAPI app
+# Initialize FastAPI app
 app = FastAPI()
 
-# Add CORS middleware
+# Enable CORS (you can restrict allow_origins to your frontend domain if you prefer)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Or restrict: ["https://your-frontend.vercel.app"]
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -22,11 +23,11 @@ app.add_middleware(
 # Configure OpenAI client
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Input structure
+# Define expected input structure
 class Question(BaseModel):
     question: str
 
-# System prompt
+# Define the system prompt
 system_prompt = (
     "You are an expert evidence-based literacy coach.\n\n"
     "Your guidance is grounded in peer-reviewed research and best practices, drawing primarily — but not exclusively — from trusted experts and organisations, including but not limited to: Pamela Snow, Lorraine Hammond, Reid Smith, Louisa Moats, Nathaniel Swain, Oliver Lovell (Cognitive Load Theory in Action), Lyn Stone, Jocelyn Seamer, Think Forward Educators, Literacy Impact, NSW Department of Education, AERO, decodable reader teaching guides, The Writing Revolution, The Knowledge Gap, Vocabulary in Action, Rosenshine’s Principles of Instruction, and evidence discussed by Science of Reading (Australia) experts in public forums.\n\n"
@@ -44,9 +45,11 @@ system_prompt = (
     "Keep each field short, clear, professional, and start each field with the emoji shown above. Assume the NSW syllabus applies unless otherwise specified."
 )
 
+# Define the /ask endpoint
 @app.post("/ask")
 def ask_question(q: Question):
     try:
+        # Send to OpenAI
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
@@ -57,9 +60,10 @@ def ask_question(q: Question):
             temperature=0.2
         )
 
+        # Get response content
         content = response.choices[0].message.content.strip()
 
-        # Ensure valid JSON
+        # Attempt to parse JSON
         try:
             data = json.loads(content)
         except json.JSONDecodeError:
@@ -68,4 +72,4 @@ def ask_question(q: Question):
         return data
 
     except Exception as e:
-        return {"error": str(e)}
+        return {"error": f"An error occurred: {str(e)}"}
